@@ -1,0 +1,10 @@
+{
+    "servers": {
+        "mcp-typescript-sdk": {
+            "type": "stdio",
+            "command": "node",
+            "args": ["my-mcp-server.js"],
+            "env": {}
+        }
+    }
+}
