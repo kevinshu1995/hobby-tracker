@@ -4,11 +4,11 @@
 
 ### 本地資料庫設計與實現
 
-- [ ] 設計並實現 IndexedDB 資料庫結構
-  - [ ] 建立 IndexedDB 連接管理模組
-  - [ ] 設計資料庫架構與物件存儲（Category、Hobby、Goal、Progress）
-  - [ ] 實作各資料類型的索引設計
-  - [ ] 建立版本管理與升級策略
+- [x] 設計並實現 IndexedDB 資料庫結構
+  - [x] 建立 IndexedDB 連接管理模組
+  - [x] 設計資料庫架構與物件存儲（Category、Hobby、Goal、Progress）
+  - [x] 實作各資料類型的索引設計
+  - [x] 建立版本管理與升級策略
 - [ ] 實作資料存取服務層
   - [ ] 實作 Category 資料存取服務
   - [ ] 實作 Hobby 資料存取服務
