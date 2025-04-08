@@ -88,23 +88,23 @@ export class GoalService extends BaseService<Goal, string> {
 
     // 根據目標類型計算完成度
     switch (goal.type) {
-      case "count":
+      case "count": {
         // 次數型目標計算次數總和與目標值的比例
         const totalCount = progressRecords.reduce(
           (sum, record) => sum + record.value,
           0
         );
         return Math.min(totalCount / goal.targetValue, 1);
-
-      case "quantity":
+      }
+      case "quantity": {
         // 量化型目標計算累計數值與目標值的比例
         const totalQuantity = progressRecords.reduce(
           (sum, record) => sum + record.value,
           0
         );
         return Math.min(totalQuantity / goal.targetValue, 1);
-
-      case "composite":
+      }
+      case "composite": {
         // 複合型目標需要同時考慮次數和時間
         const totalTime = progressRecords.reduce(
           (sum, record) => sum + (record.duration || 0),
@@ -120,7 +120,7 @@ export class GoalService extends BaseService<Goal, string> {
         const timeCompletion = Math.min(totalTime / requiredTime, 1);
 
         return Math.min(countCompletion, timeCompletion);
-
+      }
       default:
         return 0;
     }

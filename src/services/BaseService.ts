@@ -1,4 +1,4 @@
-import { Table } from "dexie";
+import { Table, UpdateSpec } from "dexie";
 
 /**
  * 基礎資料存取服務，提供通用的 CRUD 操作
@@ -40,7 +40,7 @@ export abstract class BaseService<T, K> {
    * @param id 記錄 ID
    * @param changes 部分更新的欄位
    */
-  async update(id: K, changes: Partial<T>): Promise<K> {
+  async update(id: K, changes: UpdateSpec<T>): Promise<K> {
     await this.table.update(id, changes);
     return id;
   }
