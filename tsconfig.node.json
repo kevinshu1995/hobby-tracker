@@ -18,7 +18,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "rootDirs": [".", "./.react-router/types"]
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", ".react-router/types/**/*"]
 }
