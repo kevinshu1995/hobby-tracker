@@ -1,7 +1,6 @@
 import { db } from "../db/db";
 import { Hobby } from "../types";
 import { BaseService } from "./BaseService";
-import { goalService } from "./GoalService";
 
 /**
  * 興趣項目資料存取服務

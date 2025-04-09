@@ -99,10 +99,9 @@ export abstract class BaseService<T, K> {
    * @param items 要更新的資料陣列 (必須包含 ID)
    */
   async bulkPut(items: T[]): Promise<void> {
-    return this.executeDbOperation(
-      () => this.table.bulkPut(items),
-      "批次更新記錄失敗"
-    );
+    return this.executeDbOperation(async () => {
+      await this.table.bulkPut(items);
+    }, "批次更新記錄失敗");
   }
 
   /**
@@ -110,9 +109,8 @@ export abstract class BaseService<T, K> {
    * @param ids 要刪除的記錄 ID 陣列
    */
   async bulkDelete(ids: K[]): Promise<void> {
-    return this.executeDbOperation(
-      () => this.table.bulkDelete(ids),
-      "批次刪除記錄失敗"
-    );
+    return this.executeDbOperation<void>(async () => {
+      await this.table.bulkDelete(ids);
+    }, "批次刪除記錄失敗");
   }
 }
