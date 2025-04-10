@@ -1,6 +1,8 @@
 import { db } from "../db/db";
 import { Category } from "../types";
 import { BaseService } from "./BaseService";
+import { dbObserver } from "../events/dbObserver";
+import { DataEvent } from "../events/dataEvents";
 
 /**
  * 興趣分類資料存取服務
@@ -51,6 +53,42 @@ export class CategoryService extends BaseService<Category, string> {
           .then((count) => count > 0),
       `檢查分類 ID 為 ${categoryId} 的相關興趣項目失敗`
     );
+  }
+
+  /**
+   * 新增分類記錄並發出變更通知
+   * @override
+   * @param item 要新增的分類資料
+   */
+  async add(item: Category): Promise<string> {
+    const id = await super.add(item);
+    // 發出新增分類通知
+    dbObserver.notifyChange(DataEvent.CATEGORY_ADDED, item);
+    return id;
+  }
+
+  /**
+   * 更新分類記錄並發出變更通知
+   * @override
+   * @param id 記錄 ID
+   * @param changes 部分更新的欄位
+   */
+  async update(id: string, changes: any): Promise<string> {
+    const updatedId = await super.update(id, changes);
+    // 發出更新分類通知
+    dbObserver.notifyChange(DataEvent.CATEGORY_UPDATED, { id, ...changes });
+    return updatedId;
+  }
+
+  /**
+   * 刪除分類記錄並發出變更通知
+   * @override
+   * @param id 記錄 ID
+   */
+  async delete(id: string): Promise<void> {
+    await super.delete(id);
+    // 發出刪除分類通知
+    dbObserver.notifyChange(DataEvent.CATEGORY_DELETED, id);
   }
 
   /**
@@ -109,17 +147,29 @@ export class CategoryService extends BaseService<Category, string> {
             // 2.2 針對每個目標，刪除其相關的進度記錄
             for (const goal of relatedGoals) {
               await db.progress.where("goalId").equals(goal.id).delete();
+              // 發出刪除目標相關進度記錄通知
+              dbObserver.notifyChange(DataEvent.PROGRESS_DELETED, {
+                goalId: goal.id,
+              });
             }
 
             // 2.3 刪除該興趣項目的所有目標
             await db.goals.where("hobbyId").equals(hobby.id).delete();
+            // 發出刪除興趣相關目標通知
+            dbObserver.notifyChange(DataEvent.GOAL_DELETED, {
+              hobbyId: hobby.id,
+            });
           }
 
           // 3. 刪除所有相關的興趣項目
           await db.hobbies.where("categoryId").equals(categoryId).delete();
+          // 發出刪除分類相關興趣項目通知
+          dbObserver.notifyChange(DataEvent.HOBBY_DELETED, { categoryId });
 
           // 4. 最後刪除分類本身
           await db.categories.delete(categoryId);
+          // 發出刪除分類通知
+          dbObserver.notifyChange(DataEvent.CATEGORY_DELETED, categoryId);
         }
       );
     }, `刪除分類 ID 為 ${categoryId} 及其相關聯的興趣項目、目標和進度記錄失敗`);
@@ -136,6 +186,11 @@ export class CategoryService extends BaseService<Category, string> {
           await db.categories.update(category.id, category);
         }
       });
+      // 發出批次更新分類通知
+      dbObserver.notifyChange(DataEvent.CATEGORY_CHANGED, {
+        bulkUpdate: true,
+        count: categories.length,
+      });
     }, "批次更新分類失敗");
   }
 
@@ -148,6 +203,7 @@ export class CategoryService extends BaseService<Category, string> {
   ): Promise<string[]> {
     return this.executeDbOperation(async () => {
       const ids: string[] = [];
+      const createdCategories: Category[] = [];
 
       await db.transaction("rw", db.categories, async () => {
         for (const category of categories) {
@@ -161,7 +217,14 @@ export class CategoryService extends BaseService<Category, string> {
 
           await db.categories.add(newCategory);
           ids.push(id);
+          createdCategories.push(newCategory);
         }
+      });
+
+      // 發出批次創建分類通知
+      dbObserver.notifyChange(DataEvent.CATEGORY_ADDED, {
+        bulkAdd: true,
+        categories: createdCategories,
       });
 
       return ids;
