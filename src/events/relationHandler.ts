@@ -1,19 +1,7 @@
 import { eventBus } from "./eventBus";
 import { DataEvent } from "./dataEvents";
 import { useHobbyStore, useGoalStore, useProgressStore } from "../store";
-import { Progress } from "../types";
-
-// 用於處理進度刪除事件的介面
-interface ProgressDeleteData {
-  id: string;
-  goalId: string;
-}
-
-// 用於處理資料庫變更事件的介面
-interface DatabaseChangeData {
-  specificEvent?: string;
-  [key: string]: unknown;
-}
+import { Progress, ProgressDeleteData, DatabaseChangeData } from "../types";
 
 /**
  * 設置資料關聯處理器
@@ -82,7 +70,7 @@ export function setupRelationHandlers(): () => void {
         console.debug(
           `[RelationHandler] 新增進度記錄，更新目標完成度 (${progress.goalId})`
         );
-        useGoalStore.getState().calculateCompletionRate(progress.goalId);
+        useGoalStore.getState().calculateCompletion(progress.goalId);
       }
     }
   );
@@ -95,7 +83,7 @@ export function setupRelationHandlers(): () => void {
         console.debug(
           `[RelationHandler] 更新進度記錄，更新目標完成度 (${progress.goalId})`
         );
-        useGoalStore.getState().calculateCompletionRate(progress.goalId);
+        useGoalStore.getState().calculateCompletion(progress.goalId);
       }
     }
   );
@@ -108,7 +96,7 @@ export function setupRelationHandlers(): () => void {
         console.debug(
           `[RelationHandler] 刪除進度記錄，更新目標完成度 (${data.goalId})`
         );
-        useGoalStore.getState().calculateCompletionRate(data.goalId);
+        useGoalStore.getState().calculateCompletion(data.goalId);
       }
     }
   );

@@ -1,6 +1,7 @@
 import { eventBus } from "./eventBus";
-import { DataEvent } from "./dataEvents";
+import { DataEvent, DataEventPayload } from "./dataEvents";
 import { broadcastService } from "./broadcastService";
+import { EventData } from "../types/EventTypes";
 
 /**
  * 資料庫變更觀察者類別
@@ -14,16 +15,16 @@ export class DbChangeObserver {
    */
   notifyChange<T>(event: DataEvent, data?: T): void {
     // 創建事件資料
-    // const payload: DataEventPayload<T> = {
-    //   type: event,
-    //   data,
-    //   timestamp: Date.now(),
-    //   source: "local",
-    // };
+    const payload: DataEventPayload<T> = {
+      type: event,
+      data,
+      timestamp: Date.now(),
+      source: "local",
+    };
 
     // 在本地發布事件
     console.debug(`[DbObserver] 資料變更通知: ${event}`, data);
-    eventBus.publish(event, data);
+    eventBus.publish(event, payload as EventData<typeof event>);
 
     // 向其他頁面廣播變更
     broadcastService.broadcast(event, data);
@@ -42,9 +43,13 @@ export class DbChangeObserver {
    * @returns 取消訂閱的函數
    */
   onDataChange<T>(event: DataEvent, callback: (data?: T) => void): () => void {
-    return eventBus.subscribe(event, (arg?: unknown) => {
-      // 安全地將 unknown 類型轉換為 T | undefined
-      callback(arg as T);
+    return eventBus.subscribe(event, (payload: EventData<typeof event>) => {
+      // 從 payload 中取出數據，如果是 DataEventPayload 格式則取出 data 屬性
+      const data =
+        (payload as any)?.data !== undefined
+          ? (payload as DataEventPayload<T>).data
+          : (payload as T);
+      callback(data);
     });
   }
 }

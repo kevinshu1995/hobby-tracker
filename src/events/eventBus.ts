@@ -1,7 +1,11 @@
+import { EventData, EventName } from "../types/EventTypes";
+
 /**
- * 事件回呼函數型別定義
+ * 事件回呼函數型別定義 - 使用泛型實現型別安全
  */
-type EventCallback = (...args: unknown[]) => void;
+export type EventCallback<T extends EventName = string> = (
+  data: EventData<T>
+) => void;
 
 /**
  * 事件總線類別
@@ -24,17 +28,20 @@ class EventBus {
    * @param callback 事件處理回呼函數
    * @returns 取消訂閱的函數
    */
-  subscribe(event: string, callback: EventCallback): () => void {
+  subscribe<T extends EventName>(
+    event: T,
+    callback: EventCallback<T>
+  ): () => void {
     if (!this.events.has(event)) {
       this.events.set(event, []);
     }
 
-    this.events.get(event)!.push(callback);
+    this.events.get(event)!.push(callback as EventCallback);
 
     // 返回取消訂閱的函數
     return () => {
       const callbacks = this.events.get(event)!;
-      const index = callbacks.indexOf(callback);
+      const index = callbacks.indexOf(callback as EventCallback);
       if (index !== -1) {
         callbacks.splice(index, 1);
       }
@@ -44,13 +51,13 @@ class EventBus {
   /**
    * 發布事件
    * @param event 事件名稱
-   * @param args 傳遞給事件處理函數的參數
+   * @param data 傳遞給事件處理函數的資料
    */
-  publish(event: string, ...args: unknown[]): void {
+  publish<T extends EventName>(event: T, data: EventData<T>): void {
     if (this.events.has(event)) {
       this.events.get(event)!.forEach((callback) => {
         try {
-          callback(...args);
+          callback(data);
         } catch (error) {
           console.error(`事件處理錯誤(${event}):`, error);
         }
