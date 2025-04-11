@@ -4,7 +4,7 @@
  */
 
 import { create } from "zustand";
-import { GlobalSyncState, SyncStatus } from "../types/sync/SyncStatus";
+import { GlobalSyncState } from "../types/sync/SyncStatus";
 import { eventBus } from "../events/eventBus";
 import { SyncEvent, SyncGlobalStatusEventData } from "../services/SyncService";
 import { DataEvent } from "../events/dataEvents";
@@ -16,7 +16,8 @@ interface SyncStats {
   pendingItemsCount?: number;
   failedItemsCount?: number;
   conflictItemsCount?: number;
-  [key: string]: unknown;
+  changesCount?: number;
+  [key: string]: number | undefined; // 更具體的聯合類型
 }
 
 /**
@@ -52,7 +53,7 @@ const initialState: GlobalSyncState = {
 /**
  * 建立同步狀態 Store
  */
-export const useSyncStore = create<SyncStore>((set, get) => ({
+export const useSyncStore = create<SyncStore>((set) => ({
   ...initialState,
 
   /**
@@ -64,7 +65,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       syncProgress: 0,
       currentError: null,
     });
-    eventBus.publish(DataEvent.SYNC_STARTED);
+    eventBus.publish(DataEvent.SYNC_STARTED, { source: "local" });
   },
 
   /**
@@ -79,7 +80,11 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       currentError: null,
       ...stats, // 可能包含 pendingItemsCount 等統計資訊
     });
-    eventBus.publish(DataEvent.SYNC_COMPLETED, stats);
+    // 確保 changesCount 屬性存在
+    const changesData = {
+      changesCount: stats?.changesCount || 0,
+    };
+    eventBus.publish(DataEvent.SYNC_COMPLETED, changesData);
   },
 
   /**

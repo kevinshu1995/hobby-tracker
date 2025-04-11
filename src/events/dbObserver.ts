@@ -4,6 +4,22 @@ import { broadcastService } from "./broadcastService";
 import { EventData } from "../types/EventTypes";
 
 /**
+ * 類型保護函數，檢查對象是否為 DataEventPayload 類型
+ * @param payload 要檢查的數據
+ * @returns 是否為 DataEventPayload 類型
+ */
+function isDataEventPayload<T>(
+  payload: unknown
+): payload is DataEventPayload<T> {
+  return (
+    payload !== null &&
+    typeof payload === "object" &&
+    "type" in payload &&
+    "timestamp" in payload
+  );
+}
+
+/**
  * 資料庫變更觀察者類別
  * 負責監測資料庫操作並發送相應的事件通知
  */
@@ -13,7 +29,10 @@ export class DbChangeObserver {
    * @param event 事件類型
    * @param data 事件資料
    */
-  notifyChange<T>(event: DataEvent, data?: T): void {
+  notifyChange<T extends Record<string, unknown>>(
+    event: DataEvent,
+    data?: T
+  ): void {
     // 創建事件資料
     const payload: DataEventPayload<T> = {
       type: event,
@@ -45,10 +64,9 @@ export class DbChangeObserver {
   onDataChange<T>(event: DataEvent, callback: (data?: T) => void): () => void {
     return eventBus.subscribe(event, (payload: EventData<typeof event>) => {
       // 從 payload 中取出數據，如果是 DataEventPayload 格式則取出 data 屬性
-      const data =
-        (payload as any)?.data !== undefined
-          ? (payload as DataEventPayload<T>).data
-          : (payload as T);
+      const data = isDataEventPayload<T>(payload)
+        ? payload.data
+        : (payload as T);
       callback(data);
     });
   }

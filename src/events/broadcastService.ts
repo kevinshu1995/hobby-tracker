@@ -1,5 +1,23 @@
 import { eventBus } from "./eventBus";
 import { DataEvent, DataEventPayload } from "./dataEvents";
+import { EventData } from "../types/EventTypes";
+
+/**
+ * 類型保護函數，檢查對象是否為 DataEventPayload 類型
+ * @param payload 要檢查的數據
+ * @returns 是否為 DataEventPayload 類型
+ */
+function isDataEventPayload<T>(
+  payload: unknown
+): payload is DataEventPayload<T> {
+  return (
+    payload !== null &&
+    typeof payload === "object" &&
+    "type" in payload &&
+    "timestamp" in payload &&
+    (payload as DataEventPayload<T>).type in DataEvent
+  );
+}
 
 /**
  * 廣播服務類別
@@ -21,9 +39,17 @@ export class BroadcastService {
 
     // 監聽來自其他頁面的消息
     this.channel.onmessage = (event) => {
-      const payload = event.data as DataEventPayload<unknown>;
-      // 將收到的消息轉發到本地事件總線
-      eventBus.publish(payload.type, payload.data);
+      // 使用類型保護檢查數據格式
+      if (isDataEventPayload(event.data)) {
+        const payload = event.data;
+        // 將收到的消息轉發到本地事件總線
+        eventBus.publish(
+          payload.type,
+          payload.data as EventData<typeof payload.type>
+        );
+      } else {
+        console.warn("[BroadcastService] 收到無效的事件數據格式", event.data);
+      }
     };
   }
 
