@@ -12,7 +12,6 @@ import {
   SyncableEntity,
 } from "../types/sync/SyncStatus";
 import { eventBus } from "../events/eventBus";
-import { DataEvent, DataEventPayload } from "../events/dataEvents";
 
 /**
  * 定義同步事件類型，擴展現有的 DataEvent 枚舉

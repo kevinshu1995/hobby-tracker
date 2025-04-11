@@ -8,7 +8,7 @@ import { BaseService } from "./BaseService";
  */
 export class ProgressService extends BaseService<Progress, string> {
   constructor() {
-    super(db.progress);
+    super(db.progress, "progress");
   }
 
   /**

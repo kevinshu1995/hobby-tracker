@@ -54,7 +54,18 @@ export interface SyncMetadata {
  */
 export interface SyncableEntity {
   id: string; // 實體 ID
-  syncMetadata?: SyncMetadata; // 同步元數據
+  syncMetadata?: SyncMetadata; // 同步元數據 (用於序列化/反序列化時的資料結構)
+
+  // 資料庫中實際存儲的同步欄位
+  syncStatus?: SyncStatus; // 同步狀態
+  lastSyncedAt?: number; // 最後同步時間戳
+  localUpdatedAt?: number; // 本地更新時間戳
+  serverUpdatedAt?: number; // 伺服器更新時間戳
+  pendingOperation?: SyncOperationType; // 待處理操作類型
+  conflictData?: string; // 衝突資料
+  errorMessage?: string; // 錯誤訊息
+  retryCount?: number; // 重試次數
+  lastAttemptAt?: number; // 上次嘗試同步時間
 }
 
 /**
