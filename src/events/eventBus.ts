@@ -16,7 +16,7 @@ class EventBus {
    * 事件映射表，key 為事件名稱，value 為對應的回呼函數陣列
    * @private
    */
-  private events: Map<string, EventCallback[]>;
+  private events: Map<string, Array<EventCallback<EventName>>>;
 
   constructor() {
     this.events = new Map();
@@ -36,12 +36,15 @@ class EventBus {
       this.events.set(event, []);
     }
 
-    this.events.get(event)!.push(callback as EventCallback);
+    // 將回呼加入對應事件陣列
+    const callbackList = this.events.get(event)!;
+    // 這裡需要型別轉換，因為我們知道 callback 處理的是 T 型別的事件
+    callbackList.push(callback as EventCallback<EventName>);
 
     // 返回取消訂閱的函數
     return () => {
       const callbacks = this.events.get(event)!;
-      const index = callbacks.indexOf(callback as EventCallback);
+      const index = callbacks.indexOf(callback as EventCallback<EventName>);
       if (index !== -1) {
         callbacks.splice(index, 1);
       }
@@ -55,13 +58,15 @@ class EventBus {
    */
   publish<T extends EventName>(event: T, data: EventData<T>): void {
     if (this.events.has(event)) {
-      this.events.get(event)!.forEach((callback) => {
+      const callbacks = this.events.get(event)!;
+      for (const callback of callbacks) {
         try {
-          callback(data);
+          // 此處需要型別轉換以確保型別安全性
+          (callback as EventCallback<T>)(data);
         } catch (error) {
           console.error(`事件處理錯誤(${event}):`, error);
         }
-      });
+      }
     }
   }
 
