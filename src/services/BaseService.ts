@@ -3,11 +3,19 @@ import { syncService } from "./SyncService";
 import { SyncOperationType, SyncStatus } from "../types/sync/SyncStatus";
 
 /**
+ * 確保實體具有 id 屬性的介面
+ * @template K 主鍵型別
+ */
+interface HasId<K> {
+  id: K;
+}
+
+/**
  * 基礎資料存取服務，提供通用的 CRUD 操作
  * @template T 資料模型類型
  * @template K 主鍵類型
  */
-export abstract class BaseService<T, K> {
+export abstract class BaseService<T extends HasId<K>, K> {
   protected table: Table<T, K>;
   protected tableName: string;
 
@@ -179,7 +187,7 @@ export abstract class BaseService<T, K> {
       await this.table.bulkPut(itemsWithSync);
 
       // 獲取 ID 陣列並標記為待同步
-      const ids = itemsWithSync.map((item) => (item as any).id);
+      const ids = itemsWithSync.map((item) => item.id);
       await Promise.all(
         ids.map((id) =>
           syncService.markForSync(
