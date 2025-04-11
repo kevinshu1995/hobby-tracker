@@ -16,7 +16,7 @@ interface SyncStats {
   pendingItemsCount?: number;
   failedItemsCount?: number;
   conflictItemsCount?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

@@ -75,7 +75,7 @@ export class CategoryService extends BaseService<Category, string> {
    * @param id 記錄 ID
    * @param changes 部分更新的欄位
    */
-  async update(id: string, changes: any): Promise<string> {
+  async update(id: string, changes: Partial<Category>): Promise<string> {
     const updatedId = await super.update(id, changes);
     // 發出更新分類通知
     dbObserver.notifyChange(DataEvent.CATEGORY_UPDATED, { id, ...changes });

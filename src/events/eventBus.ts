@@ -1,7 +1,7 @@
 /**
  * 事件回呼函數型別定義
  */
-type EventCallback = (...args: any[]) => void;
+type EventCallback = (...args: unknown[]) => void;
 
 /**
  * 事件總線類別
@@ -46,7 +46,7 @@ class EventBus {
    * @param event 事件名稱
    * @param args 傳遞給事件處理函數的參數
    */
-  publish(event: string, ...args: any[]): void {
+  publish(event: string, ...args: unknown[]): void {
     if (this.events.has(event)) {
       this.events.get(event)!.forEach((callback) => {
         try {

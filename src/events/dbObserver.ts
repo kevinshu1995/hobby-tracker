@@ -1,5 +1,5 @@
 import { eventBus } from "./eventBus";
-import { DataEvent, DataEventPayload } from "./dataEvents";
+import { DataEvent } from "./dataEvents";
 import { broadcastService } from "./broadcastService";
 
 /**
@@ -14,12 +14,12 @@ export class DbChangeObserver {
    */
   notifyChange<T>(event: DataEvent, data?: T): void {
     // 創建事件資料
-    const payload: DataEventPayload<T> = {
-      type: event,
-      data,
-      timestamp: Date.now(),
-      source: "local",
-    };
+    // const payload: DataEventPayload<T> = {
+    //   type: event,
+    //   data,
+    //   timestamp: Date.now(),
+    //   source: "local",
+    // };
 
     // 在本地發布事件
     console.debug(`[DbObserver] 資料變更通知: ${event}`, data);
@@ -42,7 +42,10 @@ export class DbChangeObserver {
    * @returns 取消訂閱的函數
    */
   onDataChange<T>(event: DataEvent, callback: (data?: T) => void): () => void {
-    return eventBus.subscribe(event, callback);
+    return eventBus.subscribe(event, (arg?: unknown) => {
+      // 安全地將 unknown 類型轉換為 T | undefined
+      callback(arg as T);
+    });
   }
 }
 

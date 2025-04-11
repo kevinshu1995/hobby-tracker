@@ -1,11 +1,19 @@
 import { eventBus } from "./eventBus";
 import { DataEvent } from "./dataEvents";
-import {
-  useCategoryStore,
-  useHobbyStore,
-  useGoalStore,
-  useProgressStore,
-} from "../store";
+import { useHobbyStore, useGoalStore, useProgressStore } from "../store";
+import { Progress } from "../types";
+
+// 用於處理進度刪除事件的介面
+interface ProgressDeleteData {
+  id: string;
+  goalId: string;
+}
+
+// 用於處理資料庫變更事件的介面
+interface DatabaseChangeData {
+  specificEvent?: string;
+  [key: string]: unknown;
+}
 
 /**
  * 設置資料關聯處理器
@@ -69,7 +77,7 @@ export function setupRelationHandlers(): () => void {
   // 當進度記錄新增或更新時，更新目標完成度
   const unsubProgressAdded = eventBus.subscribe(
     DataEvent.PROGRESS_ADDED,
-    (progress: any) => {
+    (progress: Progress) => {
       if (progress && progress.goalId) {
         console.debug(
           `[RelationHandler] 新增進度記錄，更新目標完成度 (${progress.goalId})`
@@ -82,7 +90,7 @@ export function setupRelationHandlers(): () => void {
 
   const unsubProgressUpdated = eventBus.subscribe(
     DataEvent.PROGRESS_UPDATED,
-    (progress: any) => {
+    (progress: Progress) => {
       if (progress && progress.goalId) {
         console.debug(
           `[RelationHandler] 更新進度記錄，更新目標完成度 (${progress.goalId})`
@@ -95,7 +103,7 @@ export function setupRelationHandlers(): () => void {
 
   const unsubProgressDeleted = eventBus.subscribe(
     DataEvent.PROGRESS_DELETED,
-    (data: any) => {
+    (data: ProgressDeleteData) => {
       if (data && data.goalId) {
         console.debug(
           `[RelationHandler] 刪除進度記錄，更新目標完成度 (${data.goalId})`
@@ -109,7 +117,7 @@ export function setupRelationHandlers(): () => void {
   // 當資料庫發生通用變更時，可能需要處理特殊情況
   const unsubDatabaseChanged = eventBus.subscribe(
     DataEvent.DATABASE_CHANGED,
-    (data: any) => {
+    (data: DatabaseChangeData) => {
       // 這裡可以處理一些特定的資料庫通用變更邏輯
       console.debug("[RelationHandler] 資料庫變更:", data?.specificEvent);
     }

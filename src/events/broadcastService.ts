@@ -21,7 +21,7 @@ export class BroadcastService {
 
     // 監聽來自其他頁面的消息
     this.channel.onmessage = (event) => {
-      const payload = event.data as DataEventPayload<any>;
+      const payload = event.data as DataEventPayload<unknown>;
       // 將收到的消息轉發到本地事件總線
       eventBus.publish(payload.type, payload.data);
     };
