@@ -34,7 +34,6 @@ export function useCombinedStore() {
     error: goalsError,
     fetchGoals,
     fetchGoalsByHobby,
-    calculateAllCompletions,
   } = useGoalStore();
 
   const {
