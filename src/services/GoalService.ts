@@ -13,7 +13,7 @@ export class GoalService extends BaseService<Goal, string> {
   private readonly CACHE_TTL = 60000; // 60秒快取時間
 
   constructor() {
-    super(db.goals);
+    super(db.goals, "goals");
   }
 
   /**
