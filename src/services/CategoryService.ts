@@ -3,6 +3,8 @@ import { Category } from "../types";
 import { BaseService } from "./BaseService";
 import { dbObserver } from "../events/dbObserver";
 import { DataEvent } from "../events/dataEvents";
+import { SyncOperationType, SyncStatus } from "../types/sync/SyncStatus";
+import { syncService } from "./SyncService";
 
 /**
  * 興趣分類資料存取服務
@@ -10,7 +12,7 @@ import { DataEvent } from "../events/dataEvents";
  */
 export class CategoryService extends BaseService<Category, string> {
   constructor() {
-    super(db.categories);
+    super(db.categories, "categories"); // 傳遞表名作為第二個參數
   }
 
   /**
@@ -146,11 +148,34 @@ export class CategoryService extends BaseService<Category, string> {
 
             // 2.2 針對每個目標，刪除其相關的進度記錄
             for (const goal of relatedGoals) {
+              // 標記相關進度記錄為待同步 (刪除)
+              const progressRecords = await db.progress
+                .where("goalId")
+                .equals(goal.id)
+                .toArray();
+
+              for (const progress of progressRecords) {
+                await syncService.markForSync(
+                  "progress",
+                  progress.id,
+                  SyncOperationType.DELETE
+                );
+              }
+
               await db.progress.where("goalId").equals(goal.id).delete();
               // 發出刪除目標相關進度記錄通知
               dbObserver.notifyChange(DataEvent.PROGRESS_DELETED, {
                 goalId: goal.id,
               });
+            }
+
+            // 標記目標為待同步 (刪除)
+            for (const goal of relatedGoals) {
+              await syncService.markForSync(
+                "goals",
+                goal.id,
+                SyncOperationType.DELETE
+              );
             }
 
             // 2.3 刪除該興趣項目的所有目標
@@ -161,10 +186,26 @@ export class CategoryService extends BaseService<Category, string> {
             });
           }
 
+          // 標記興趣項目為待同步 (刪除)
+          for (const hobby of relatedHobbies) {
+            await syncService.markForSync(
+              "hobbies",
+              hobby.id,
+              SyncOperationType.DELETE
+            );
+          }
+
           // 3. 刪除所有相關的興趣項目
           await db.hobbies.where("categoryId").equals(categoryId).delete();
           // 發出刪除分類相關興趣項目通知
           dbObserver.notifyChange(DataEvent.HOBBY_DELETED, { categoryId });
+
+          // 標記分類為待同步 (刪除)
+          await syncService.markForSync(
+            "categories",
+            categoryId,
+            SyncOperationType.DELETE
+          );
 
           // 4. 最後刪除分類本身
           await db.categories.delete(categoryId);
@@ -183,7 +224,22 @@ export class CategoryService extends BaseService<Category, string> {
     return this.executeDbOperation(async () => {
       await db.transaction("rw", db.categories, async () => {
         for (const category of categories) {
-          await db.categories.update(category.id, category);
+          // 更新同步狀態相關欄位
+          const categoryWithSync = {
+            ...category,
+            syncStatus: SyncStatus.PENDING,
+            localUpdatedAt: Date.now(),
+            pendingOperation: SyncOperationType.UPDATE,
+          };
+
+          await db.categories.update(category.id, categoryWithSync);
+
+          // 標記為待同步
+          await syncService.markForSync(
+            "categories",
+            category.id,
+            SyncOperationType.UPDATE
+          );
         }
       });
       // 發出批次更新分類通知
@@ -204,6 +260,7 @@ export class CategoryService extends BaseService<Category, string> {
     return this.executeDbOperation(async () => {
       const ids: string[] = [];
       const createdCategories: Category[] = [];
+      const now = Date.now();
 
       await db.transaction("rw", db.categories, async () => {
         for (const category of categories) {
@@ -213,11 +270,21 @@ export class CategoryService extends BaseService<Category, string> {
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
+            syncStatus: SyncStatus.PENDING,
+            localUpdatedAt: now,
+            pendingOperation: SyncOperationType.CREATE,
           } as Category;
 
           await db.categories.add(newCategory);
           ids.push(id);
           createdCategories.push(newCategory);
+
+          // 標記為待同步
+          await syncService.markForSync(
+            "categories",
+            id,
+            SyncOperationType.CREATE
+          );
         }
       });
 
